@@ -1,4 +1,4 @@
-package com.thanosfisherman.freqgen.sample;
+package com.thanosfisherman.freqgen.sample.buzzer;
 
 /**
  * A buzzer that will end after the set duration has ended or stop() is called.

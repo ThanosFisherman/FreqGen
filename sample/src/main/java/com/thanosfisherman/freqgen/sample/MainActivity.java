@@ -4,16 +4,20 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 
-public class MainActivity extends AppCompatActivity
+import com.thanosfisherman.freqgen.sample.buzzer.ContinuousBuzzer;
+import com.thanosfisherman.freqgen.sample.buzzer.OneTimeBuzzer;
+
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener
 {
-    final ContinuousBuzzer tonePlayer = new ContinuousBuzzer();
-    private int freq = 440;
+    private volatile int freq = 440;
     private Handler mHandler = new Handler();
     int vol = 0;
+    ContinuousBuzzer contBuzzer = new ContinuousBuzzer();
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -21,31 +25,36 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        tonePlayer.setVolume(vol);
-        tonePlayer.setPausePeriodSeconds(2);
-        tonePlayer.setToneFreqInHz(freq);
         Button button = (Button) findViewById(R.id.btn_play);
-        button.setOnTouchListener(new View.OnTouchListener()
+        button.setOnTouchListener(this);
+
+        //        mHandler.postDelayed(new Runnable()
+        //        {
+        //            @Override
+        //            public void run()
+        //            {
+        //                mHandler.postDelayed(this, 1000);
+        //            }
+        //        }, 1000);
+        contBuzzer.play();
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event)
+    {
+        switch (event.getAction())
         {
-            @Override
-            public boolean onTouch(View v, MotionEvent event)
-            {
-                //if (event.getAction() == MotionEvent.ACTION_DOWN)
-
-                return false;
-            }
-        });
-
-        mHandler.postDelayed(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                tonePlayer.setVolume(vol += 5);
-                mHandler.postDelayed(this, 1000);
-            }
-        }, 1000);
-
-        tonePlayer.play();
+            case MotionEvent.ACTION_DOWN:
+                System.out.println(" pressed ");
+                v.setPressed(true);
+                freq += 50;
+                contBuzzer.setToneFreqInHz(freq);
+                return true;
+            case MotionEvent.ACTION_UP:
+                v.setPressed(false);
+                System.out.println(" released ");
+                return true;
+        }
+        return false;
     }
 }

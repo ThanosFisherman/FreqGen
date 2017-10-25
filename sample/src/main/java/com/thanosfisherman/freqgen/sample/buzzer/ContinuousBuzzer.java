@@ -1,4 +1,4 @@
-package com.thanosfisherman.freqgen.sample;
+package com.thanosfisherman.freqgen.sample.buzzer;
 
 /**
  * A buzzer that will continue playing until stop() is called.

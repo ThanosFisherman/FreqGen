@@ -1,8 +1,9 @@
-package com.thanosfisherman.freqgen.sample;
+package com.thanosfisherman.freqgen.sample.buzzer;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 public abstract class TonePlayer {
@@ -10,7 +11,7 @@ public abstract class TonePlayer {
     protected final Object toneFreqInHzSyncObj = new Object();
     protected int volume = 100;
 
-    protected AudioTrack audioTrack = null;
+    @Nullable protected AudioTrack audioTrack = null;
     protected int audTrackBufferSize = 0;
     protected boolean isPlaying = false;
     protected Thread playerWorker;
@@ -126,7 +127,7 @@ public abstract class TonePlayer {
         // convert to 16 bit pcm sound array
         // assumes the sample buffer is normalised.
         int idx = 0;
-        int i = 0;
+        int i;
 
         // Amplitude ramp as a percent of sample count
         //  (smaller ramp for continuous; trying for cleaner sound)
@@ -143,7 +144,7 @@ public abstract class TonePlayer {
         }
 
         // Max amplitude for most of the samples
-        for (i = i; i < numSamples - ramp; ++i) {
+        for (; i < numSamples - ramp; ++i) {
             double dVal = sample[i];
             // scale to maximum amplitude
             final short val = (short) ((dVal * 32767));
@@ -153,7 +154,7 @@ public abstract class TonePlayer {
         }
 
         // Ramp amplitude down
-        for (i = i; i < numSamples; ++i) {
+        for (; i < numSamples; ++i) {
             double dVal = sample[i];
             // Ramp down to zero
             final short val = (short) ((dVal * 32767 * (numSamples - i) / ramp));

@@ -1,4 +1,4 @@
-package com.thanosfisherman.freqgen.sample;
+package com.thanosfisherman.freqgen.sample.buzzer;
 
 public class NoteFreqs
 {
