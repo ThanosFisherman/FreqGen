@@ -25,7 +25,7 @@ public class OneTimeBuzzer extends TonePlayer {
     protected void asyncPlayTrack() {
         playerWorker = new Thread(new Runnable() {
             public void run() {
-                playTone(duration);
+                playTone(duration, false);
                 stop();
             }
         });

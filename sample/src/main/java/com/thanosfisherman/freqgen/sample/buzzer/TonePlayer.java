@@ -53,7 +53,12 @@ public abstract class TonePlayer
 
     public void setVolume(int volume)
     {
-        this.volume = volume;
+        if (volume < 0)
+            this.volume = 0;
+        else if (volume > 100)
+            this.volume = 100;
+        else
+            this.volume = volume;
     }
 
     public int getVolume()
@@ -186,11 +191,6 @@ public abstract class TonePlayer
         }
 
         playSound(sampleRate, soundData);
-    }
-
-    protected void playTone(double seconds)
-    {
-        playTone(seconds, false);
     }
 
     protected void playSound(int sampleRate, byte[] soundData)
