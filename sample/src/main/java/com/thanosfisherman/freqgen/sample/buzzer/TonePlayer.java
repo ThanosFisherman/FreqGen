@@ -3,33 +3,36 @@ package com.thanosfisherman.freqgen.sample.buzzer;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
-public abstract class TonePlayer {
-    protected double toneFreqInHz = 440;
-    protected final Object toneFreqInHzSyncObj = new Object();
-    protected int volume = 100;
+public abstract class TonePlayer
+{
+    private double toneFreqInHz = 440;
+    private final Object toneFreqInHzSyncObj = new Object();
+    private int volume = 100;
 
-    @Nullable protected AudioTrack audioTrack = null;
-    protected int audTrackBufferSize = 0;
+    private AudioTrack audioTrack = null;
+    private int audTrackBufferSize = 0;
     protected boolean isPlaying = false;
     protected Thread playerWorker;
 
-    protected double lastToneFreqInHz = 0.0;
-    protected int lastNumSamplesCount = 0;
-    protected double lastDoubleSamples[] = null;
-    protected byte lastSoundBytes[] = null;
+    private double lastToneFreqInHz = 0.0;
+    private int lastNumSamplesCount = 0;
+    private double lastDoubleSamples[] = null;
+    private byte lastSoundBytes[] = null;
 
 
-    public TonePlayer() {
+    public TonePlayer()
+    {
     }
 
-    public TonePlayer(double toneFreqInHz) {
+    public TonePlayer(double toneFreqInHz)
+    {
         this.toneFreqInHz = toneFreqInHz;
     }
 
-    public void play() {
+    public void play()
+    {
         if (isPlaying)
             return;
 
@@ -39,7 +42,8 @@ public abstract class TonePlayer {
         asyncPlayTrack();
     }
 
-    public void stop() {
+    public void stop()
+    {
         isPlaying = false;
         if (audioTrack == null)
             return;
@@ -47,31 +51,39 @@ public abstract class TonePlayer {
         tryStopPlayer();
     }
 
-    public void setVolume(int volume) {
+    public void setVolume(int volume)
+    {
         this.volume = volume;
     }
 
-    public int getVolume() {
+    public int getVolume()
+    {
         return volume;
     }
 
-    public double getToneFreqInHz() {
-        synchronized (toneFreqInHzSyncObj) {
+    public double getToneFreqInHz()
+    {
+        synchronized (toneFreqInHzSyncObj)
+        {
             return toneFreqInHz;
         }
     }
 
-    public void setToneFreqInHz(double toneFreqInHz) {
-        synchronized (toneFreqInHzSyncObj) {
+    public void setToneFreqInHz(double toneFreqInHz)
+    {
+        synchronized (toneFreqInHzSyncObj)
+        {
             this.toneFreqInHz = toneFreqInHz;
         }
     }
 
     protected abstract void asyncPlayTrack();
 
-    protected void tryStopPlayer() {
+    private void tryStopPlayer()
+    {
         isPlaying = false;
-        try {
+        try
+        {
             if (playerWorker != null)
                 playerWorker.interrupt();
 
@@ -80,7 +92,9 @@ public abstract class TonePlayer {
             audioTrack.flush();
             audioTrack.release();
             audioTrack = null;
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e)
+        {
             // Likely issue with concurrency, doesn't matter, since means it's stopped anyway
             // so we just eat the exception
         }
@@ -89,7 +103,8 @@ public abstract class TonePlayer {
     /**
      * below from http://stackoverflow.com/questions/2413426/playing-an-arbitrary-tone-with-android
      */
-    protected void playTone(double seconds, boolean continuousFlag) {
+    protected void playTone(double seconds, boolean continuousFlag)
+    {
         int sampleRate = 8000;
 
         double dnumSamples = seconds * sampleRate;
@@ -99,9 +114,11 @@ public abstract class TonePlayer {
 
         double sample[];
         byte soundData[];
-        if (numSamples == lastNumSamplesCount) {
+        if (numSamples == lastNumSamplesCount)
+        {
             // if same tone then
-            if (freqInHz == lastToneFreqInHz) {
+            if (freqInHz == lastToneFreqInHz)
+            {
                 // repeat with same data
                 playSound(sampleRate, lastSoundBytes);
                 return;
@@ -111,7 +128,9 @@ public abstract class TonePlayer {
             // reuse arrays
             sample = lastDoubleSamples;
             soundData = lastSoundBytes;
-        } else {  //different duration; create (and save) new arrays
+        }
+        else
+        {  //different duration; create (and save) new arrays
             sample = lastDoubleSamples = new double[numSamples];
             soundData = lastSoundBytes = new byte[2 * numSamples];
             lastNumSamplesCount = numSamples;
@@ -127,14 +146,15 @@ public abstract class TonePlayer {
         // convert to 16 bit pcm sound array
         // assumes the sample buffer is normalised.
         int idx = 0;
-        int i;
+        int i = 0;
 
         // Amplitude ramp as a percent of sample count
         //  (smaller ramp for continuous; trying for cleaner sound)
         int ramp = numSamples / (continuousFlag ? 200 : 20);
 
         // Ramp amplitude up (to avoid clicks)
-        for (i = 0; i < ramp; ++i) {
+        for (i = 0; i < ramp; ++i)
+        {
             double dVal = sample[i];
             // Ramp up to maximum
             final short val = (short) ((dVal * 32767 * i / ramp));
@@ -144,7 +164,8 @@ public abstract class TonePlayer {
         }
 
         // Max amplitude for most of the samples
-        for (; i < numSamples - ramp; ++i) {
+        for (i = i; i < numSamples - ramp; ++i)
+        {
             double dVal = sample[i];
             // scale to maximum amplitude
             final short val = (short) ((dVal * 32767));
@@ -154,7 +175,8 @@ public abstract class TonePlayer {
         }
 
         // Ramp amplitude down
-        for (; i < numSamples; ++i) {
+        for (i = i; i < numSamples; ++i)
+        {
             double dVal = sample[i];
             // Ramp down to zero
             final short val = (short) ((dVal * 32767 * (numSamples - i) / ramp));
@@ -166,17 +188,23 @@ public abstract class TonePlayer {
         playSound(sampleRate, soundData);
     }
 
-    protected void playTone(double seconds) {
+    protected void playTone(double seconds)
+    {
         playTone(seconds, false);
     }
 
-    protected void playSound(int sampleRate, byte[] soundData) {
-        try {
-            int bufferSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+    protected void playSound(int sampleRate, byte[] soundData)
+    {
+        try
+        {
+            int bufferSize =
+                    AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
 
             //if buffer-size changing or no previous obj then allocate:
-            if (bufferSize != audTrackBufferSize || audioTrack == null) {
-                if (audioTrack != null) {
+            if (bufferSize != audTrackBufferSize || audioTrack == null)
+            {
+                if (audioTrack != null)
+                {
                     //release previous object
                     audioTrack.pause();
                     audioTrack.flush();
@@ -185,9 +213,11 @@ public abstract class TonePlayer {
 
                 //allocate new object:
                 audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                        sampleRate, AudioFormat.CHANNEL_OUT_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT, bufferSize,
-                        AudioTrack.MODE_STREAM);
+                                            sampleRate,
+                                            AudioFormat.CHANNEL_OUT_MONO,
+                                            AudioFormat.ENCODING_PCM_16BIT,
+                                            bufferSize,
+                                            AudioTrack.MODE_STREAM);
                 audTrackBufferSize = bufferSize;
             }
 
@@ -197,7 +227,9 @@ public abstract class TonePlayer {
 
             audioTrack.play();
             audioTrack.write(soundData, 0, soundData.length);
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             Log.e("tone player", e.toString(), e);
         }
     }

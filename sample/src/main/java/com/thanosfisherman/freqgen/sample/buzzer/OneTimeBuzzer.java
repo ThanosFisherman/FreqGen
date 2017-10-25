@@ -4,9 +4,8 @@ package com.thanosfisherman.freqgen.sample.buzzer;
  * A buzzer that will end after the set duration has ended or stop() is called.
  * Default duration is 5 seconds.
  */
-public class OneTimeBuzzer extends TonePlayer
-{
-    protected double duration = 5;
+public class OneTimeBuzzer extends TonePlayer {
+    private double duration = 5;
 
     public OneTimeBuzzer(double duration) {
         this.duration = duration;
