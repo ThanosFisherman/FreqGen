@@ -1,30 +1,29 @@
 package com.thanosfisherman.freqgen.sample;
 
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-
-import com.karlotoy.perfectune.instance.PerfectTune;
-import com.thanosfisherman.freqgen.sample.buzzer.OneTimeBuzzer;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener
 {
-    private Handler mHandler = new Handler();
+    @NonNull private Handler mHandler = new Handler();
     AudioManager audioManager;
-    private boolean isButtonPressed;
-    //final ContinuousBuzzer buzzer = new ContinuousBuzzer();
-    final PerfectTune perfectTune = new PerfectTune();
-    final OneTimeBuzzer buzzer = new OneTimeBuzzer(10);
-    int vol = 0;
     SoundPool soundPool;
-    int sound;
+    private boolean isButtonPressed;
+    int volDec = 0;
+    float volF = 0;
+    int soundId, streamId;
     private final Runnable mButtonPressedRunnable = new Runnable()
     {
         @Override
@@ -32,18 +31,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         {
             if (isButtonPressed)
             {
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol--, AudioManager.FLAG_SHOW_UI);
+                volF = decreaseVol();
+                // audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volDec--, AudioManager.FLAG_SHOW_UI);
+                soundPool.setVolume(streamId, volF, volF);
             }
             else
             {
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol++, AudioManager.FLAG_SHOW_UI);
+                volF = increaseVol();
+                soundPool.setVolume(streamId, volF, volF);
+                //audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volDec++, AudioManager.FLAG_SHOW_UI);
             }
 
-            if (vol > audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
-                vol = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-            else if (vol < 0)
-                vol = 0;
-            //buzzer.setToneFreqInHz(freq+=30);
+
             mHandler.postDelayed(this, 1000);
         }
     };
@@ -53,42 +52,32 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
-        soundPool = new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
-        sound = soundPool.load(getApplicationContext(), R.raw.freq4000, 1); // in 2nd param u have to pass your desire ringtone
-        perfectTune.setTuneFreq(4000);
-        buzzer.setDuration(10);
-        //buzzer.setPausePeriodSeconds(1);
-
-        buzzer.setVolume(50);
-        buzzer.setToneFreqInHz(4000);
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, AudioManager.FLAG_SHOW_UI);
-
-        Button button = (Button) findViewById(R.id.btn_play);
+        createSoundPool();
+        loadSounds();
+        setVolume();
+        Button button = findViewById(R.id.btn_play);
         button.setOnTouchListener(this);
 
-        //mHandler.postDelayed(mButtonPressedRunnable, 1000);
-        // buzzer.play();
-        //perfectTune.playTune();
-        Log.i("MAIN","CONVERTER 0.5 " + ConverterUtil.linearToDecibel(0.5f));
+        mHandler.postDelayed(mButtonPressedRunnable, 1000);
     }
 
     @Override
-    public boolean onTouch(View v, MotionEvent event)
+    public boolean onTouch(@NonNull View v, @NonNull MotionEvent event)
     {
         switch (event.getAction())
         {
             case MotionEvent.ACTION_DOWN:
-                System.out.println(" pressed ");
+                Toast.makeText(this, "New Threshold " + ConverterUtil.linearToDecibel(volF), Toast.LENGTH_SHORT).show();
                 v.setPressed(true);
                 isButtonPressed = true;
-                soundPool.play(sound, 1, 1, 1, -1, 1);
 
                 return true;
             case MotionEvent.ACTION_UP:
-                v.setPressed(false);
                 System.out.println(" released ");
+                v.setPressed(false);
+                Toast.makeText(this, "New Threshold " + ConverterUtil.linearToDecibel(volF), Toast.LENGTH_SHORT).show();
                 isButtonPressed = false;
                 return true;
         }
@@ -100,7 +89,60 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     {
         super.onDestroy();
         mHandler.removeCallbacksAndMessages(null);
-        buzzer.stop();
+        soundPool.release();
+
+    }
+
+    private void createSoundPool()
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        {
+            final AudioAttributes.Builder audioAttrsBuilder = new AudioAttributes.Builder();
+            audioAttrsBuilder.setUsage(AudioAttributes.USAGE_MEDIA);
+            audioAttrsBuilder.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC);
+            soundPool = new SoundPool.Builder().setAudioAttributes(audioAttrsBuilder.build()).setMaxStreams(1).build();
+        }
+        else
+        {
+            soundPool = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
+        }
+    }
+
+    private void loadSounds()
+    {
+        soundPool.setOnLoadCompleteListener((soundPool, sampleId, status) ->
+                                            {
+                                                if (sampleId == soundId)
+                                                    streamId = soundPool.play(sampleId, 0, 0, 0, -1, 1);
+
+                                            });
+        soundId = soundPool.load(getApplicationContext(), R.raw.freq4000, 1);
+    }
+
+    private float increaseVol()
+    {
+        volDec++;
+        if (volDec > 100)
+            volDec = 100;
+        Log.i("MAIN", "VOLUME " + (float) volDec / 100.0f);
+        return (float) volDec / 100.0f;
+    }
+
+    private float decreaseVol()
+    {
+        volDec--;
+        if (volDec < 0)
+            volDec = 0;
+        Log.i("MAIN", "VOLUME " + (float) volDec / 100.0f);
+        return (float) volDec / 100.0f;
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private void setVolume()
+    {
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 1, AudioManager.FLAG_SHOW_UI);
 
     }
 }

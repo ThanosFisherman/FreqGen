@@ -7,22 +7,18 @@ package com.thanosfisherman.freqgen.sample;
 public final class ConverterUtil
 {
 
-    public static int linearToDecibel(float linear)
+    public static float linearToDecibel(float linear)
     {
-        float dB;
-
-        if (linear == 0)
-            dB = -144.0f;
+       /* if (linear == 0)
+            return -144.0f;
         else
-            dB = (float) (20.0f * Math.log10(linear));
+            return (float) (20.0f * Math.log10(linear));*/
 
-        return (int) dB;
+        return linear == 0 ? -144.0f : (float) (20.0f * Math.log10(linear));
     }
 
     public static float decibelToLinear(float dB)
     {
-        float linear = (float) Math.pow(10.0f, dB / 20.0f);
-
-        return linear;
+        return (float) Math.pow(10.0f, dB / 20.0f);
     }
 }
